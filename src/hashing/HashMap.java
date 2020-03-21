@@ -12,7 +12,7 @@ import java.util.NoSuchElementException;
  * HashMap implementation using hashing w/ linked list buckets.
  * Please refer to the official HashMap Java 11 documentation
  * for an explanation on the behavior of each of the methods below.
- *
+ * <p>
  * https://docs.oracle.com/en/java/javase/11/docs/api/java.base/java/util/HashMap.html
  *
  * @param <K> Type of the keys.
@@ -57,6 +57,9 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
     }
 
     public V put(K key, V value) {
+        if (!contains(key) && (size + 1) / (table.length * 1.0) > LOAD_FACTOR) {
+            expand();
+        }
         int slot = getSlot(key);
         if (table[slot] == null) {
             table[slot] = new LinkedList<>();
@@ -70,8 +73,19 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
 
 
         /* YOUR CODE HERE */
+        while (i.hasNext()) {
+            Pair<K, V> current = i.next();
+            if (current.left == null || current.left.equals(key)) {
+                V result = current.right;
+                i.set(new Pair<>(key, value));
+                return result;
+            }
+        }
+        i.add(new Pair<>(key, value));
+        size++;
         return null;
     }
+
 
     public V get(K key) {
         int slot = getSlot(key);
@@ -80,7 +94,36 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
         }
 
         /* YOUR CODE HERE */
+        ListIterator<Pair<K, V>> i = table[slot].listIterator();
+
+
+        /* YOUR CODE HERE */
+        while (i.hasNext()) {
+            Pair<K, V> current = i.next();
+            if (current.left == null || current.left.equals(key)) {
+                return current.right;
+            }
+        }
         return null;
+    }
+    
+    private boolean contains(K key) {
+        int slot = getSlot(key);
+        if (table[slot] == null || table[slot].isEmpty()) {
+            return false;
+        }
+
+        ListIterator<Pair<K, V>> i = table[slot].listIterator();
+        while (i.hasNext()) {
+            Pair<K, V> current = i.next();
+            if (current.left == null && key == null) {
+                return true;
+            }
+            if (current.left != null && current.left.equals(key)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     public V remove(K key) {
@@ -97,6 +140,15 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
 
 
         /* YOUR CODE HERE */
+        while (i.hasNext()) {
+            Pair<K, V> current = i.next();
+            if (current.left == null || current.left.equals(key)) {
+                V result = current.right;
+                i.remove();
+                size--;
+                return result;
+            }
+        }
         return null;
     }
 
@@ -116,12 +168,26 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
         HashMap<K, V> hashMap;
 
         /* YOUR CODE HERE */
+        int currentSlot;
+        ListIterator<Pair<K, V>> it;
 
 
         HashMapIterator(HashMap<K, V> hashMap) {
             this.hashMap = hashMap;
 
             /* YOUR CODE HERE */
+            currentSlot = -1;
+            setSlotIndex(0);
+        }
+
+        private void setSlotIndex(int slotIndex) {
+            for (int i = slotIndex; i < table.length; i++) {
+                if (table[i] != null && table[i].size() != 0) {
+                    it = table[i].listIterator();
+                    currentSlot = i;
+                    break;
+                }
+            }
         }
 
         @Override
@@ -133,18 +199,45 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
              */
 
             /* YOUR CODE HERE */
-            return false;
+            if (currentSlot < 0) {
+                return false;
+            }
+            if (it.hasNext()) {
+                return true;
+            }
+            int tmp = currentSlot;
+            currentSlot = -1;
+            it = null;
+            setSlotIndex(tmp + 1);
+
+            if (currentSlot < 0) {
+                return false;
+            }
+            return it.hasNext();
         }
 
         @Override
         public Pair<K, V> next() {
             /* YOUR CODE HERE */
-            return null;
+            if (it == null) {
+                throw new NoSuchElementException();
+            }
+            if (hasNext()) {
+                return it.next();
+            } else {
+                throw new NoSuchElementException();
+            }
         }
 
         @Override
         public void remove() {
             /* YOUR CODE HERE */
+            if (it == null) {
+                throw new IllegalStateException();
+            }
+
+            it.remove();
+            size--;
         }
     }
 
@@ -154,8 +247,20 @@ public class HashMap<K, V> implements Iterable<Pair<K, V>> {
         LinkedList<Pair<K, V>>[] newTable = (LinkedList<Pair<K, V>>[]) Array.newInstance(LinkedList.class, table.length * 2);
 
         /* YOUR CODE HERE */
-
+        LinkedList<Pair<K, V>>[] originalTable = table;
         this.table = newTable;
+        size = 0;
+        for (int i = 0; i < originalTable.length; i++) {
+            if (originalTable[i] == null) {
+                continue;
+            }
+            ListIterator<Pair<K, V>> it = originalTable[i].listIterator();
+            /* YOUR CODE HERE */
+            while (it.hasNext()) {
+                Pair<K, V> current = it.next();
+                put(current.left, current.right);
+            }
+        }
     }
 
 }
