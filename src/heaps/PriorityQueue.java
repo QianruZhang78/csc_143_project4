@@ -42,7 +42,7 @@ public class PriorityQueue<T> {
         @Override
         public int compareTo(ComparablePair<L, R> o) {
             /* YOUR CODE HERE */
-            return -1;
+            return  this.left.compareTo(o.left);
         }
     }
 
@@ -57,20 +57,22 @@ public class PriorityQueue<T> {
 
     public void insert(Integer priority, T value) {
         /* YOUR CODE HERE */
+        heap.insert(new ComparablePair<>(priority, value));
+
     }
 
     public T peek() {
         /* YOUR CODE HERE */
-        return null;
+        return heap.peek().right;
     }
 
     public T remove() {
         /* YOUR CODE HERE */
-        return null;
+        return heap.remove().right;
     }
 
     public int size() {
         /* YOUR CODE HERE */
-        return 0;
+        return heap.size();
     }
 }
